@@ -1,0 +1,22 @@
+<html>
+<head>
+<title>Receive data handlers</title>
+</head>
+<body>
+<h2>Receive data handlers</h2>
+<p>
+This package contains all classes needed to parse, process and handle
+received data. There are 3 groups of classes:
+<ul>
+<li> <b> RecvPacket </b> like structures. They are subclasses of {@link flightsim.simconnect.recv.RecvPacket}
+and represents data received from the server </li>
+<li> <b> Handlers /b> interfaces. There is an interface for each type
+of received data. Implements any of these interfaces and add it 
+to a listener list in {@link flightsim.simconnect.recv.DispatcherTask} to received only events
+of a specified type </li>
+<li> <b> Dispatchers </b> they handle incoming data, parse them to create
+RecvPacket objects and passes them to either a subclass or subscribed
+handlers. {@link flightsim.simconnect.recv.AbstractDispatcher} {@link flightsim.simconnect.recv.DispatcherTask}. </li>
+</ul> 
+</body>
+</html>

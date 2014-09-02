@@ -1,0 +1,45 @@
+Version 0.7 		4 Nov 2007
+	* Added more methods with enum prototypes
+	* Racing & multiplayer events from FSX SP2
+	* Automatic connection port detect fix
+	* Exception building fix in AbstractDispatcher
+	* Some thoughts on version emulation
+
+Version 0.6:		14 Oct 2007
+	* Added constants to the Configuration class
+	* Automatic methods to detect the simconnect tcp port
+
+Version 0.5:		17 May 2007
+	* More samples adapted from the SDK
+	* New methods in DispatcherTask to add all handlers implemented by a class
+	* Enlarged receive buffers
+	* Reworked constructor methods
+	* Added new simconnect facilities and text from SDK SP1A
+	
+Version 0.4:		31 January 2007
+	* Fixed bug in setDataOnSimObject
+	* Fixed bad packet type for for AIsetAircraftFlightPlan
+	* Fixed bad packet type for for WeatherRequestCloudState
+	* Added methods to convert between LatLonAlt/XYZ/Initposition
+	* Methods with IDs now accepts enumeration (take ordinal())
+	* DispatcherTask can now add/remove listener asynchronously
+	* Small network usage statistics
+
+Version 0.3:		27 December 2006
+	* Added DataDefinitionWrapper class
+	* Some typos fixes
+	* DataWrapper now implements standard JDK 1.1 DataInput/DataOutput for convenience
+
+Version 0.2:       25 November 2006
+	* Fixed possible overflow when reading strings in MarkerState and RecvPacket subclasses
+	* Corrected erroneous flag size in Waypoint structure
+	* Added some more examples
+	* Added configuration files support
+	* IPv6 support
+	* Corrected invalid packet format for FlightSave
+	* SetDataOnSimObject does not takes a element size. It is an artefact from the win32 library that is buggy
+	* Added some GUID wrappers
+	
+Version 0.1:		12 November 2006
+	* Initial Release
+	

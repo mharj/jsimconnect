@@ -1,0 +1,260 @@
+<html>
+<head>
+<title>Main jSimConnect package</title>
+</head>
+<body>
+<h2>Main jSimConnect package</h2>
+<p>
+This package contains main data structures to create and manage a
+jSimConnect connection. To handle responses and received data from
+the server, see classes in <b>recv</b> package.
+
+<hr/>
+<h3>SimConnect protocol internals</h3>
+<br/>
+SimConnect uses TCP/IP communication, even for localhost and intra-process
+communication. Although this design could have severe drawbacks, it
+is far easier to implement and allows complete distributing, since
+application will have the same behavior running from remote host or
+launched as FSX DLLs. 
+<br/>
+To increase performance for local communications, all firewalls or
+traffic inspector software should be disabled.
+
+<h4>Rule of the thumb</h4>
+<p>
+<ol>
+<li> Every function of the simconnect API synchronously sends a packet 
+formed by a 16 bytes 
+header and all arguments concatened in the order of the declaration</li>
+<li> Every received packet data is passed without change to the dispatch proc (the
+packet format is directly known from <i>SIMCONNECT_RECV</i> structures.</li>
+</ol>
+Exceptions are the {@link flightsim.simconnect.SimConnect#requestResponseTimes} function that
+does little logic (not implemented in jSimConnect) and the <b>open</b> function
+that uses slightly differents arguments, but with the same packet header.
+<br/>
+No forms of data acknowledgement are actually processed by the client library,
+so the client application will receive all received data.
+</p>
+
+<h4>Format of sent packets</h4>
+<p>
+All integers sent, including headers, are in little-endian Intel format.
+The 16-bytes header consists of 4 integer :
+<ul>
+<li> 0 - int32 :  total size in bytes of the packet (including header) </li>
+<li> 4 - int32 : protocol version. 0x2 for FSX original release; 0x3 for SP1, 0x4 for SP2 </li>
+<li> 8 - int32 : packet type ID. Each function of the library has a predefined type,
+usually numbered from 1 to 0x3F. The type is sent OR'ed with 0xF0000000 
+(unknown meaning). </li>
+<li> 12 - int32 : packet identifier : each packet has an unique identifier, which
+is used to identify erroneous requests when the server sends back an exception. 
+Generally a sequence number. </li>
+</ul>
+Unless mentionned in the documentation, all strings are sent in ISO-8859-1
+encoding, and padded up to 256 bytes. File name and paths are sent padded up to 260 bytes. 
+Even null references or empty strings are padded. Generally requests
+have a fixed size, excepted for function that takes a pointer to byte array.
+METAR strings are not padded.
+Floating point numbers may be 32 bits or 64 bits long. Both types are
+sent in IEEE 754 format.
+<br/>
+Sucessful requests other than <b>open</b> are not acknowledged by the server.
+</p>
+<p>
+The <b>open</b> packet has a slightly different format. It's format is the
+following: 
+<ul>
+<li> bytes 0-16 : standard header (see above) </li>
+<li> 16 - char[256] : application name (standard 256 bytes long string, padded with zeros) </li>
+<li> 272 - int32 : unknown meaning (always 0) </li>
+<li> 276 - char : 0 </li>
+<li> 277 - char : 'X' (ascii character) </li>
+<li> 278 - char : 'S' </li>
+<li> 279 - char : 'F' </li>
+<li> 280 - int32 : simconnect version major (eg 10) </li>
+<li> 284 - int32 : simconnect version minor (eg 0) </li>
+<li> 288 - int32 : simconnect build major (eg 61355) </li>
+<li> 292 - int32 : simconnect build minor (eg 0) </li>
+</ul>
+The server checks that simconnect version and build numbers are corresponding
+to the protocol version. FSX RTM 'SP0' expects protocol version 2 and
+60905.0 as build number. FSX SP1 use version 3 and build number 61355.0.
+<br/>
+FSX SP0 does not verify version number, whereas SP1 needs "10.0" as
+version.
+</p>
+
+
+<h4>Packet type IDs</h4>
+<p>
+<table border="1">
+<tr><td><b>function</b></td><td><b>packet type ID</b>/<td></tr>
+		<tr><td>Open</td><td> 0x1</td></tr>
+		<tr><td>QueryPerformanceCounter</td><td>  0x3</td></tr>
+		<tr><td>MapClientEventToSimEvent</td><td> 0x4</td></tr>
+		<tr><td>TransmitClientEvent</td><td> 0x5</td></tr>
+		<tr><td>SetSystemEventState</td><td> 0x6</td></tr>
+		<tr><td>AddClientEventToNotificationGroup</td><td> 0x07</td></tr>
+		<tr><td>RemoveClientEvent</td><td> 0x8</td></tr>
+		<tr><td>SetNotificationGroupPriority</td><td> 0x9</td></tr>
+		<tr><td>ClearNotificationGroup</td><td> 0xa</td></tr>
+		<tr><td>RequestNotificationGroup</td><td> 0xb</td></tr>
+		<tr><td>AddToDataDefinition</td><td> 0xc</td></tr>
+		<tr><td>ClearDataDefinition</td><td> 0xd</td></tr>
+		<tr><td>RequestDataOnSimObject</td><td> 0xe</td></tr>
+		<tr><td>RequestDataOnSimObjectType</td><td> 0xf</td></tr>
+		<tr><td>SetDataOnSimObject</td><td> 0x10</td></tr>
+		<tr><td>MapInputEventToClientEvent</td><td> 0x11</td></tr>
+		<tr><td>SetInputGroupPriority</td><td> 0x12</td></tr>
+		<tr><td>RemoveInputEvent</td><td> 0x13</td></tr>
+		<tr><td>ClearInputGroup</td><td> 0x14</td></tr>
+		<tr><td>SetInputGroupState</td><td> 0x15</td></tr>
+		<tr><td>RequestReservedKey</td><td> 0x16</td></tr>
+		<tr><td>SubscribeToSystemEvent</td><td> 0x17</td></tr>
+		<tr><td>UnsubscribeFromSystemEvent</td><td> 0x18</td></tr>
+		<tr><td>WeatherRequestInterpolatedObservation</td><td> 0x19</td></tr>
+		<tr><td>WeatherRequestObservationAtStation</td><td> 0x1A</td></tr>
+		<tr><td>WeatherRequestObservationAtNearestStation</td><td> 0x1B</td></tr>
+		<tr><td>WeatherCreateStation</td><td> 0x1C</td></tr>
+		<tr><td>WeatherRemoveStation</td><td> 0x1D</td></tr>
+		<tr><td>WeatherSetObservation</td><td> 0x1E</td></tr>
+		<tr><td>WeatherSetModeServer</td><td> 0x1F</td></tr>
+		<tr><td>WeatherSetModeTheme</td><td> 0x20</td></tr>
+		<tr><td>WeatherSetModeGlobal</td><td> 0x21</td></tr>
+		<tr><td>WeatherSetModeCustom</td><td> 0x22</td></tr>
+		<tr><td>WeatherSetDynamicUpdateRate</td><td> 0x23</td></tr>
+		<tr><td>WeatherRequestCloudState</td><td> 0x24</td></tr>
+		<tr><td>WeatherCreateThermal</td><td> 0x25</td></tr>
+		<tr><td>WeatherRemoveThermal</td><td> 0x26</td></tr>
+		<tr><td>AICreateParkedATCAircraft</td><td> 0x27</td></tr>
+		<tr><td>AICreateEnrouteATCAircraft</td><td> 0x28</td></tr>
+		<tr><td>AICreateNonATCAircraft</td><td> 0x29</td></tr>
+		<tr><td>AICreateSimulatedObject</td><td> 0x2A</td></tr>
+		<tr><td>AIReleaseControl</td><td> 0x2B</td></tr>
+		<tr><td>AIRemoveObject</td><td> 0x2C</td></tr>
+		<tr><td>AISetAircraftFlightPlan</td><td> 0x2D</td></tr>
+		<tr><td>ExecuteMissionAction</td><td> 0x2E</td></tr>
+		<tr><td>CompleteCustomMissionAction</td><td> 0x2F</td></tr>
+		<tr><td>CameraSetRelative6DOF</td><td> 0x30</td></tr>
+		<tr><td>MenuAddItem</td><td> 0x31</td></tr>
+		<tr><td>MenuDeleteItem</td><td> 0x32</td></tr>
+		<tr><td>MenuAddSubItem</td><td> 0x33</td></tr>
+		<tr><td>MenuDeleteSubItem</td><td> 0x34</td></tr>
+		<tr><td>RequestSystemState</td><td> 0x35</td></tr>
+		<tr><td>SetSystemState</td><td> 0x36</td></tr>
+		<tr><td>MapClientDataNameToID</td><td> 0x37</td></tr>
+		<tr><td>CreateClientData</td><td> 0x38</td></tr>
+		<tr><td>AddToClientDataDefinition</td><td> 0x39</td></tr>
+		<tr><td>ClearClientDataDefinition</td><td> 0x3A</td></tr>
+		<tr><td>RequestClientData</td><td> 0x3B</td></tr>
+		<tr><td>SetClientData</td><td> 0x3C</td></tr>
+		<tr><td>FlightLoad</td><td> 0x3D</td></tr>
+		<tr><td>FlightSave</td><td> 0x3E</td></tr>
+		<tr><td>FlightPlanLoad</td><td> 0x3F</td></tr>
+		<tr><td>Text</td><td> 0x40</td></tr>
+		<tr><td>SubscribeToFacilities</td><td> 0x41</td></tr>
+		<tr><td>UnSubscribeToFacilities</td><td> 0x42</td></tr>
+		<tr><td>RequestFacilitiesList</td><td> 0x43</td></tr>
+	</table>
+	The <b>RequestClientData</b> and <b>AddToClientDataDefinition</b>
+	have different prototypes in simconnect SP1. The check is done
+	by the server based on the protocol version.
+</p>
+
+
+<h4>Format of received packets</h4>
+<p>
+All received packets are sent to the DispatchProc, so their format
+follow the definition of SIMCONNECT_RECV structure. The header is 12 bytes
+long and is similar to sent packets:
+<ul>
+<li> 0 - int32 : total size in bytes </li>
+<li> 4 - int32 : protocol version (0x2 or 0x3) </li>
+<li> 8 - int32 : packet type. see the numbers in the RECV_ID enumeration </li>
+</ul>
+The non-header datas that follows are flat representation of subclasses
+of SIMCONNECT_RECV. Some may be of variable length (METAR, SimObjectData).
+</p>
+
+
+<h4>Networking</h4>
+<p>
+SimConnect use TCP/IP networking even when the application and FSX are
+on the same machine, or in the same process (when client is launched
+from DLL.xml). The server can be configured to listen on IPv4 or 
+IPv6 addresses, but the format of data transferred is the same.
+<br/>
+When not port numbers are specified in server config file (SimConnect.XML),
+it is chosen randomly (more frequently, unspecified port numbers in MS Windows
+are chosen from 1024 and increasing at each request), but no 
+heuristic will work). If the scope in SimConnect.XML is defined to be local,
+then the port number is posted in the registry database
+in <u>USER_ROOT\SOFTWARE\Microsoft Games\Flight Simulator\SimConnect_Port_IPv4</u>
+(or SimConnect_Port_IPv6 if used)
+</p>
+
+
+<h4>Implementing a simconnect client library in java</h4>
+<p>
+
+The SimConnect client library, although very simple, relies on non-portable
+programming tricks: casting raw data array to structures, packing of 
+structures in memory, fixed endianness. These tricks are difficult, or
+even impossible, to develop in strict OOP languages. 
+<br/>
+The managed implementation (C#) of the SimConnect library makes extensive
+use of compiler-dependent instructions like explicit marshalling and structure
+layout definitions. Such instructions are not available in the Java language.
+<br/>
+To use java classes as data definitions, the programmer had to implement
+all functions that transforms the content of classes from and to a byte array
+(Standard serialization is NOT applicable). A useful API is 
+{@link java.nio.ByteBuffer} that provides functions to read/write integers and
+floating point numbers. Note that a ByteBuffer is big endian by default 
+{@link java.nio.ByteBuffer#order()}. jSimConnect makes extensive use 
+of this class.
+<br/>
+Another caveat is memory/cpu consumption. In the standard SimConnect implementation,
+data from the network is directly casted to a pointer to a structure
+of the right type. In jSimConnect, the data is wrapped first into
+a temporary ByteBuffer, and then an instance of a subclass of {@link flightsim.simconnect.recv.RecvPacket}
+is constructed. Add endianness transformation, 5-6 method calls for
+each field, and overhead of allocating 2 objects for each received packets.
+<br/>
+The result is not so awful since a lot of optimization lies in the JVM. I'm
+always surprised of the performance of some bloated java code ;-).
+However, jSimConnect is reasonnably not intended to run on the same
+machine as FSX, because the total overhead of using TCP/IP and complex
+wrapping code just to communicate some data between two process. 
+</p>
+
+
+<h4>A note on protocol version </h4>
+ u>NB: does not deal with IP (4 or 6) protocol ! </u>. <br/>
+
+When using a jsimconnect instance, some constructors accepts a protocol version number. These version indicates
+the simconnect protocol to emulate when talking to the remote FSX. The different FSX updates included new features
+to the simconnect protocol & client library, but also broke backward compatibility when the simconnect client
+is newer than the remote Flight Simulator instance.<br/>
+JSimconnect uses the version given to the constructor to <i>emulate</i> an older simconnect protocol client,
+thus allowing to connect to older FSX versions. Note that by default, the protocol number used is the most up
+to date, and consequently a VERSION_MISMATCH exception will be received upon connecting to older FSX version.
+As of jsimconnect 0.7, this protocol version is <b>0x4</b>, corresponding to Pre-SP2/Acceleration XPack.
+<br/>
+As of jsimconnect 0.7 the supported protocol numbers are :
+<ul>
+<li> 0x2 (RTM version). Note that 0x1 (possibly from fsx beta) is not supported </li>
+<li> 0x3 (SP1). </li>
+<li> 0x4 (SP2/Acceleration) </li>
+</ul>
+When specifying a protocol version to emulate, some functions will be inhibited as they may not be available
+in the current version. For instance modeless UI or facilities are not available before SP1. 
+Constructing a simconnect instance emulating protocol 0x2 will systematically throw an UnsupportedOperationException
+exception when calling this methods.
+
+
+
+</body>
+</html>
