@@ -75,6 +75,10 @@ public class ConfigurationManager {
 		}
 		fr.close();
 	}
+        
+        public static void addConfiguration(Configuration config) {
+            configs.add(config);
+        }
 	
 	/**
 	 * Returns the configuration given its number
