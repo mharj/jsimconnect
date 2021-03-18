@@ -88,9 +88,7 @@ public class ConfigurationManager {
 	 */
 	public static Configuration getConfiguration(int number) throws ConfigurationNotFoundException { 
 		if (!inited) readConfiguration();
-		if (number > configs.size()) throw new ConfigurationNotFoundException(number);
-		Configuration cfg = configs.get(number);
-		if (cfg == null) throw new ConfigurationNotFoundException(number);
-		return cfg;
+		if (configs.size() == 0 || number > configs.size()) throw new ConfigurationNotFoundException(number);
+		return configs.get(number);
 	}
 }
